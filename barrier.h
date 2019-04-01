@@ -77,4 +77,3 @@ int barrier_wait(barrier_t *barrier, void * barrier_func_args);
 
 
 #endif
-

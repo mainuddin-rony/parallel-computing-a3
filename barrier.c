@@ -56,7 +56,7 @@
 int barrier_init (barrier_t *barrier, int count, void * (* barrier_func)(void *) )
 {
     int status;
-    printf("Inside barrier init. Count is %d\n", count);
+    // printf("Inside barrier init. Count is %d\n", count);
     barrier->threshold = barrier->counter = count;
     barrier->cycle = 0;
     barrier->barrier_func=barrier_func;
@@ -124,7 +124,7 @@ int barrier_destroy (barrier_t *barrier)
 int barrier_wait (barrier_t *barrier, void * barrier_func_args)
 {
     int status, cancel, cycle;
-    printf("%s\n", "Into barrier wait");
+    // printf("%s\n", "Into barrier wait");
 
 
     if (barrier->valid != BARRIER_VALID)
@@ -135,14 +135,14 @@ int barrier_wait (barrier_t *barrier, void * barrier_func_args)
         return status;
 
     cycle = barrier->cycle;   /* Remember which cycle we're on */
-    printf("Barrier cycle is %d\n", cycle);
-    printf("Barrier counter is %d\n", barrier->counter);
+    // printf("Barrier cycle is %d\n", cycle);
+    // printf("Barrier counter is %d\n", barrier->counter);
     // PJR: note the pre-decrement operator below (--)
     // We'll decrement counter BEFORE evaluating the equality test.
     if (--barrier->counter == 0) {
         barrier->cycle = !barrier->cycle;
         barrier->counter = barrier->threshold;
-        printf("Barrier threshold is %d\n", barrier->threshold);
+        // printf("Barrier threshold is %d\n", barrier->threshold);
         status = pthread_cond_broadcast (&barrier->cv);
 
         // Execute the barrier function, if there is one.
@@ -163,7 +163,7 @@ int barrier_wait (barrier_t *barrier, void * barrier_func_args)
          * Wait with cancellation disabled, because barrier_wait
          * should not be a cancellation point.
          */
-        printf("Barrier Wait Else");
+        // printf("Barrier Wait Else");
         pthread_setcancelstate (PTHREAD_CANCEL_DISABLE, &cancel);
 
         /*

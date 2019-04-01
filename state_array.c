@@ -57,7 +57,7 @@ void createStateArray(int _nrows, int _ncols){
     ncols = _ncols;
 
     arr_len = nrows * ncols;
-    printf("Initializing State Array. Arr len is %d\n", arr_len);
+    // printf("Initializing State Array. Arr len is %d\n", arr_len);
 
     state_arr = malloc(arr_len * sizeof(state));
 
@@ -133,10 +133,10 @@ void initBorders(){
     // setting the sum values of the border elements, you are triggering the
     // wavefront.  Use pthread_cond_broadcast() rather than pthread_cond_signal().
     //  ( is there a case where it could make a difference? )
-    printf("%s\n", "Initiating Borders");
+    // printf("%s\n", "Initiating Borders");
     for (int i = 0; i <  nrows; i ++){
       int b_idx = index(i, ncols-1);
-      printf("Initializing border idx %d\n", b_idx);
+      // printf("Initializing border idx %d\n", b_idx);
       pthread_mutex_lock(&state_arr[b_idx].lock);
       state_arr[b_idx].sum = 1;
       pthread_cond_broadcast(&state_arr[b_idx].cv);
@@ -145,7 +145,7 @@ void initBorders(){
 
     for (int i = 0; i <  ncols-1; i ++){
       int b_idx = index(nrows-1, i);
-      printf("Initializing border idx %d\n", b_idx);
+      // printf("Initializing border idx %d\n", b_idx);
       pthread_mutex_lock(&state_arr[b_idx].lock);
       state_arr[b_idx].sum = 1;
       pthread_cond_broadcast(&state_arr[b_idx].cv);
@@ -155,7 +155,7 @@ void initBorders(){
 }
 
 
-void signalBorderCVs()
+void signalBorderCVs(int idx)
 {
   for (int i=0; i <  nrows; i ++){
     int b_idx = index(i, ncols-1);
@@ -164,12 +164,14 @@ void signalBorderCVs()
     pthread_mutex_unlock(&state_arr[b_idx].lock);
   }
 
-  for (int i=0; i <  ncols; i ++){
+  for (int i=0; i <  ncols-1; i ++){
     int b_idx = index(nrows-1, i);
     pthread_mutex_lock(&state_arr[b_idx].lock);
     pthread_cond_broadcast(&state_arr[b_idx].cv);
     pthread_mutex_unlock(&state_arr[b_idx].lock);
   }
+
+  // printf("Exiting signal border idx %d\n", idx);
 
 }
 

@@ -147,7 +147,7 @@ int wavefront(int num_state_rows, int num_state_cols, int numRounds){
     for(int round=0; round < numRounds; round++){
 
 	    barrier_wait(&barrier, NULL);
-      printf("%s\n", "Came into loop");
+      // printf("%s\n", "Came into loop");
 		  printf("Round %d, result is %d\n", round, gResult);
 
     }
@@ -163,6 +163,11 @@ int wavefront(int num_state_rows, int num_state_cols, int numRounds){
     }
 
     destroyStateArray();
+
+    if (barrier_destroy(&barrier) != 0){
+
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
@@ -189,10 +194,11 @@ void *doWork(void *a){
     args = NULL; a=NULL;
 
 
+
     int e_idx = E(idx);
     int s_idx = S(idx);
     int es_idx = s_idx + 1;
-    printf("Main Index: %d, East Index: %d, South Index: %d, South-East Index: %d\n", idx, e_idx, s_idx, es_idx);
+    // printf("Main Index: %d, East Index: %d, South Index: %d, South-East Index: %d\n", idx, e_idx, s_idx, es_idx);
 
     //TODO: Write me.
     // Take a look at the functions available through state_array.c.
@@ -204,33 +210,31 @@ void *doWork(void *a){
     // Also, use pthread_cond_broadcast() rather than pthread_cond_signal(). You
     // want to wake _all_ sleeping threads, not just one.
 
+    for(int round = 0; round<nRounds; round++){
+    pthread_mutex_lock(&getStateArray()[idx].lock);
 
-pthread_mutex_lock(&getStateArray()[idx].lock);
 
 
-    printf("before while Idx:%d, getStateArray()[e_idx].sum:%d, getStateArray()[s_idx].sum:%d, getStateArray()[es_idx].sum:%d\n", idx, getStateArray()[e_idx].sum,getStateArray()[s_idx].sum,getStateArray()[es_idx].sum);
-    while(getStateArray()[e_idx].sum == 0)
+    while((getStateArray()[e_idx].sum == 0) || (getStateArray()[s_idx].sum == 0) || (getStateArray()[es_idx].sum == 0))
      {
-         printf("Idx:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d\n", idx, e_idx, getStateArray()[e_idx].sum, s_idx, getStateArray()[s_idx].sum, es_idx, getStateArray()[es_idx].sum);
-         pthread_cond_wait(&getStateArray()[e_idx].cv, &getStateArray()[idx].lock);
-         //pthread_cond_wait(&getStateArray()[s_idx].cv, &getStateArray()[idx].lock);
-         //pthread_cond_wait(&getStateArray()[es_idx].cv, &getStateArray()[idx].lock);
-     }
-     while(getStateArray()[s_idx].sum == 0)
-      {
-          printf("Idx:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d\n", idx, e_idx, getStateArray()[e_idx].sum, s_idx, getStateArray()[s_idx].sum, es_idx, getStateArray()[es_idx].sum);
-          // pthread_cond_wait(&getStateArray()[e_idx].cv, &getStateArray()[idx].lock);
-          pthread_cond_wait(&getStateArray()[s_idx].cv, &getStateArray()[idx].lock);
-          //pthread_cond_wait(&getStateArray()[es_idx].cv, &getStateArray()[idx].lock);
-      }
-      while(getStateArray()[es_idx].sum == 0)
-       {
-           printf("Idx:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d, getStateArray()[%d].sum:%d\n", idx, e_idx, getStateArray()[e_idx].sum, s_idx, getStateArray()[s_idx].sum, es_idx, getStateArray()[es_idx].sum);
-           // pthread_cond_wait(&getStateArray()[e_idx].cv, &getStateArray()[idx].lock);
-           //pthread_cond_wait(&getStateArray()[s_idx].cv, &getStateArray()[idx].lock);
+       // pthread_cond_wait(&getStateArray()[e_idx].cv, &getStateArray()[idx].lock);
+       // pthread_cond_wait(&getStateArray()[s_idx].cv, &getStateArray()[idx].lock);
+       // pthread_cond_wait(&getStateArray()[es_idx].cv, &getStateArray()[idx].lock);
+
+         if (getStateArray()[e_idx].sum == 0){
+           pthread_cond_wait(&getStateArray()[e_idx].cv, &getStateArray()[idx].lock);
+         }
+
+         if (getStateArray()[s_idx].sum == 0){
+           pthread_cond_wait(&getStateArray()[s_idx].cv, &getStateArray()[idx].lock);
+         }
+
+         if (getStateArray()[es_idx].sum == 0){
            pthread_cond_wait(&getStateArray()[es_idx].cv, &getStateArray()[idx].lock);
-       }
-     printf("reached this point:%d\n", idx);
+         }
+
+     }
+     // printf("reached this point:%d\n", idx);
      getStateArray()[idx].sum = getStateArray()[e_idx].sum +
              getStateArray()[s_idx].sum +
              getStateArray()[es_idx].sum ;
@@ -239,9 +243,15 @@ pthread_mutex_lock(&getStateArray()[idx].lock);
 
      pthread_mutex_unlock(&getStateArray()[idx].lock);
 
-     // signalBorderCVs();
+     signalBorderCVs(idx);
+     // printf("Sum of the array of index %d is %d\n", idx, getStateArray()[idx].sum);
+     pthread_mutex_lock(&getStateArray()[idx].lock);
+     pthread_cond_broadcast(&getStateArray()[idx].cv);
+     pthread_mutex_unlock(&getStateArray()[idx].lock);
 
-     printf("Sum of the array of index %d is %d\n", idx, getStateArray()[idx].sum);
+     barrier_wait(barr, NULL);
+   }
+
 
     return NULL;
 }
@@ -256,7 +266,7 @@ pthread_mutex_lock(&getStateArray()[idx].lock);
  *  of the border elements to 1.
  */
 void * barrier_function(void * a){
-  printf("%s\n", "Barrier call hocche");
+  // printf("%s\n", "Barrier call hocche");
 	gResult = getStateArray()[0].sum;
 
  	  resetStateArray();
