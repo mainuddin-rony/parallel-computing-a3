@@ -1,7 +1,7 @@
 #ifndef STATE_ARRAY_H
 #define STATE_ARRAY_H
 
-// A struct holding the sum value for a "state array" element, 
+// A struct holding the sum value for a "state array" element,
 // including an associated mutex and condition variable.
 typedef struct{
 
@@ -15,7 +15,7 @@ typedef struct{
  *  the sum is set to 0.
  *
  *  @param _nrows number of rows in the new array
- *  @param _ncols number of columns in the new array 
+ *  @param _ncols number of columns in the new array
  */
 void createStateArray(int _nrows, int _ncols);
 
@@ -39,8 +39,9 @@ state * getStateArray();
  */
 void initBorders();
 
+void signalBorderCVs();
 
-/** For each element, including border elements, set the sum field to 0. 
+/** For each element, including border elements, set the sum field to 0.
  */
 void resetStateArray();
 
@@ -50,7 +51,7 @@ int waitOnNeighbor(int index);
 /** Given a row and column, compute the index of the corresponding element of the state_array.
  *
  *  @param r the row coordinate
- *  @param c the column coordinate    
+ *  @param c the column coordinate
  *  @return the element index
 */
 int index(int r, int c);

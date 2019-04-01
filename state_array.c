@@ -15,7 +15,7 @@
  *  But if we want to "visit" every element (like for initialization), it's simpler to stick
  *  with the 1D index.
  *
- *  Elements in the last column and in the bottom row are considered border elements, and 
+ *  Elements in the last column and in the bottom row are considered border elements, and
  *  are treated specially by functions like initBorders(). The diagram below shows the position
  *  of the border elements for a 6 x 6 array, the cardinal directions (N,S,E,W), as well as element 0
  *  in the upper left.
@@ -27,7 +27,7 @@
  *      * * * * * B
  * W    * * * * * B     E
  *      * * * * * B
- *      B B B B B B            
+ *      B B B B B B
  *
  *          S
  */
@@ -49,7 +49,7 @@ int arr_len = 0;         // The total number of elements in the state array.
  *  the sum is set to 0.
  *
  *  @param _nrows number of rows in the new array
- *  @param _ncols number of columns in the new array 
+ *  @param _ncols number of columns in the new array
  */
 void createStateArray(int _nrows, int _ncols){
 
@@ -57,14 +57,15 @@ void createStateArray(int _nrows, int _ncols){
     ncols = _ncols;
 
     arr_len = nrows * ncols;
-    
+    printf("Initializing State Array. Arr len is %d\n", arr_len);
+
     state_arr = malloc(arr_len * sizeof(state));
-    
+
     for(int i=0; i < arr_len; i++){
-    
+
         pthread_cond_init(&(state_arr[i].cv), NULL);
         pthread_mutex_init(&(state_arr[i].lock), NULL);
-        
+
         state_arr[i].sum = 0;
     }
 }
@@ -93,9 +94,9 @@ int getNumCols(){
  *  by the array.
  */
 void destroyStateArray(){
-    
+
     for(int i=0; i < arr_len; i++){
-    
+
         pthread_cond_destroy(&(state_arr[i].cv));
         pthread_mutex_destroy(&(state_arr[i].lock));
     }
@@ -105,12 +106,12 @@ void destroyStateArray(){
 }
 
 
-/** For each element, including border elements, set the sum field to 0. 
+/** For each element, including border elements, set the sum field to 0.
  */
 void resetStateArray(){
 
     for(int i=0; i < arr_len; i++){
-    
+
         pthread_mutex_lock(&(state_arr[i].lock));   // probably not required, because the barrier
                                                     // prevents parallel execution,
         state_arr[i].sum = 0;
@@ -118,28 +119,64 @@ void resetStateArray(){
                                                     // portable
     }
 
-}	
+}
 
 /** For each border element, set the sum field to 1 and signal on the elements condition
- *  variable. Border elements are found in the last column and in the bottom row of the 
- *  array. 
+ *  variable. Border elements are found in the last column and in the bottom row of the
+ *  array.
  */
 void initBorders(){
 
     //TODO: Write me.
-    
+
     // It's important to use the lock and cv fields here. You're not just
     // setting the sum values of the border elements, you are triggering the
     // wavefront.  Use pthread_cond_broadcast() rather than pthread_cond_signal().
-    //  ( is there a case where it could make a difference? ) 
+    //  ( is there a case where it could make a difference? )
+    printf("%s\n", "Initiating Borders");
+    for (int i = 0; i <  nrows; i ++){
+      int b_idx = index(i, ncols-1);
+      printf("Initializing border idx %d\n", b_idx);
+      pthread_mutex_lock(&state_arr[b_idx].lock);
+      state_arr[b_idx].sum = 1;
+      pthread_cond_broadcast(&state_arr[b_idx].cv);
+      pthread_mutex_unlock(&state_arr[b_idx].lock);
+    }
 
+    for (int i = 0; i <  ncols-1; i ++){
+      int b_idx = index(nrows-1, i);
+      printf("Initializing border idx %d\n", b_idx);
+      pthread_mutex_lock(&state_arr[b_idx].lock);
+      state_arr[b_idx].sum = 1;
+      pthread_cond_broadcast(&state_arr[b_idx].cv);
+      pthread_mutex_unlock(&state_arr[b_idx].lock);
+    }
+
+}
+
+
+void signalBorderCVs()
+{
+  for (int i=0; i <  nrows; i ++){
+    int b_idx = index(i, ncols-1);
+    pthread_mutex_lock(&state_arr[b_idx].lock);
+    pthread_cond_broadcast(&state_arr[b_idx].cv);
+    pthread_mutex_unlock(&state_arr[b_idx].lock);
+  }
+
+  for (int i=0; i <  ncols; i ++){
+    int b_idx = index(nrows-1, i);
+    pthread_mutex_lock(&state_arr[b_idx].lock);
+    pthread_cond_broadcast(&state_arr[b_idx].cv);
+    pthread_mutex_unlock(&state_arr[b_idx].lock);
+  }
 
 }
 
 /** Given a row and column, compute the index of the corresponding element of the state_array.
  *
  *  @param r the row coordinate
- *  @param c the column coordinate    
+ *  @param c the column coordinate
  *  @return the element index
 */
 int index(int r, int c){
@@ -190,15 +227,15 @@ int W(int index){
  *  @return the element's sum value.
  */
 int waitOnNeighbor(int index){
-    	
+
     //TODO: Write me.
-    // 
+    //
     // putting this code in a function that is called by doWork() cleans
     // up the doWork() code, but if you'd rather write this code directly
     // in the thread function, that's okay too.
     //
     // In any case, remember to use a while loop with cond_wait(), so
     // you don't have problems with missed signals, etc.
-    
+
 	return 42;
 }
